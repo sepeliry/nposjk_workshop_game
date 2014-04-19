@@ -1,0 +1,1 @@
+Maastokuvat m‰‰ritt‰v‰t milt‰ kentt‰ n‰ytt‰‰. Kutakin karttakuvan pikseli‰ vastaa yksi 50x50 kuva ja maastokuvan vasemman yl‰kulman koodipikseli kertoo milloin se tulee lis‰t‰ kentt‰‰n. Tummat maastos‰vyt ovat esteit‰, joiden l‰pi ei p‰‰se ja vaaleat sellaisia, joiden l‰pi p‰‰see. Mit‰ tummempi sit‰ vaikeakulkuisempi.

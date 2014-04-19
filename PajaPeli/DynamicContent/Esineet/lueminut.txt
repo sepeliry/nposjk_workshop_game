@@ -1,0 +1,1 @@
+Esine lis‰t‰‰n peliin kun vasemman yl‰kulman v‰rikoodi tulee vastaan "Kartat/kartannimi.png" tiedostossa. Esineen alla oleva maasto on l‰hin ei-kulkemista est‰v‰ maasto.
