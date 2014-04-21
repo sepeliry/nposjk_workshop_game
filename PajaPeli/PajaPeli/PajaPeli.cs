@@ -11,18 +11,23 @@ using System.IO;
  * TODO / BUGIT
  * 
  * BUGI: Jostain syystä pelaaja ei spawnaa pelaajaspawnivärillä osoitetulle paikalle, vaan oletuskohtaan (0,0). Selvitä miksi.
- * BUGI: Jostain syystä post-build-step (xcopy) ei kopioi DynamicContent
- * TODO: Kokeile toimiiko dynaaminen lataaminen hahmoille, esineille ja maastolle.
+ * TODO: Kokeile toimiiko dynaaminen lataaminen
+ *          - hahmoille,
+ *          - esineille ja
+ *          - maastolle.
  * TODO: Tee lataaja Apurit luokkaan musiikille ja äänitehosteille.
  * TODO: Lisää tapahtumakäsittelijät, jotka liipaisevat Tapahtuma:n (joka toistaa satunnaisen aiheeseen sopivan äänitehosteen)
  * TODO: Soita musiikkikipaleita satunnaisessa järjestyksessä peräperää.
  * TODO: Valikot,
- *            alkuvalikko, josta valitaan "Satunnainen peli", "Valikoitu peli" (ks alla.), "Lopeta".
- *            "Valikoitu peli"-valikko, joilla voi valita aluksi kentän, pelihahmon tai taustamusiikin. Tee myös pikanäppäimet, joilla pelin aikana voi vaihtaa näitä.
+ *          - alkuvalikko, josta valitaan "Satunnainen peli", "Valikoitu peli" (ks alla.), "Lopeta".
+ *          - "Valikoitu peli"-valikko, joilla voi (alivalikoista) valita kentän, pelihahmon ja taustamusiikin.
+ *             Tee myös pikanäppäimet, joilla pelin aikana voi vaihtaa näitä.
  * TODO: Toteuta pelaajahahmon lyöntitoiminto ja hyppytoiminto. Hypätessä voit välttää törmäyksen maaston (mutta ei esteiden) kanssa.
  * TODO: Harkitse simppelin inventaariosysteemin toteuttamista (numeroilla 1-9 valitaan mikä on kädessä, noukkia voi aseita, avaimia jne)
  * TODO: Lisää Xbox controller näpylät.
- * TODO: Käännä hahmon kuva aina nopeusvektorin suuntaan.
+ * TODO: Käännä hahmo aina nopeusvektorin suuntaan.
+ * TODO: Aivot vihollisille (hahmoille, jotka ei ole pelaaja)
+ * TODO: Toistaiseksi kuvat saavat olla 32x32 (ei tehdä yläviistosta, vaikeampaa kun pitäisi animoida ja tehdä takaa/edestä/sivulta kuvat). Muuta templateja.
  */
 
 public class PajaPeli : PhysicsGame
