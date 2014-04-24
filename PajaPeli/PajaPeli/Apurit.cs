@@ -3,9 +3,22 @@ using System.Collections.Generic;
 using Jypeli;
 using System.Linq;
 using System.IO;
+using System.Runtime.InteropServices;
+using Microsoft.Xna.Framework.Graphics;
 
 static class Apurit
 {
+    public static void VaihdaKokoruuduntilaan(IntPtr Hwnd, bool ylin)
+    {
+        // Peli on kokoruudun kokoinen ja aina päällimmäinen.
+        int HEADER_HT = 25; int BORDER_WT = 3;
+        int screenHt = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+        int screenWt = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+        if (ylin)
+            User32.SetWindowPos((uint)Hwnd, User32.HWND_TOPMOST, -BORDER_WT, -HEADER_HT, screenWt + BORDER_WT * 2, screenHt + HEADER_HT + BORDER_WT, 0);
+        else
+            User32.SetWindowPos((uint)Hwnd, User32.HWND_TOP, 0, 0, screenWt, screenHt, 0);
+    }
     public static Color HaeYleisinVariKomponenteittain(Color[] listaVareja)
     {
         return new Color(
@@ -56,7 +69,7 @@ static class Apurit
 
             // Lue värikoodi
             Color varikoodi = ladattuKuva[0, 0];
-            if (varikoodi == Color.White || varikoodi.AlphaComponent == 255)
+            if (varikoodi == Color.White || varikoodi.AlphaComponent == 0)
             {
                 peli.MessageDisplay.Add("Kuvan " + Path.GetFileName(kuvaPolku) + " värikoodi on valkoinen tai läpinäkyvä, mitä ei sallita.");
                 continue; // Hyppää seuraavaan tiedostoon (for silmukassa)
@@ -90,4 +103,21 @@ static class Apurit
             }
         }
     }
+}
+
+
+class User32
+{
+    public const int SW_MAXIMIZE = 3;
+    public const int SW_MINIMIZE = 6;
+
+    public const int HWND_TOP = 0;
+    public const int HWND_TOPMOST = -1;
+
+    [DllImport("user32.dll")]
+    public static extern void SetWindowPos(uint Hwnd, int Level, int X, int Y, int W, int H, uint Flags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ShowWindow(IntPtr hWnd, uint nCmdShow);
 }

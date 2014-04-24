@@ -25,9 +25,6 @@ using System.IO;
  * TODO: Toteuta pelaajahahmon lyöntitoiminto ja hyppytoiminto. Hypätessä voit välttää törmäyksen maaston (mutta ei esteiden) kanssa.
  * TODO: Harkitse simppelin inventaariosysteemin toteuttamista (numeroilla 1-9 valitaan mikä on kädessä, noukkia voi aseita, avaimia jne)
  * TODO: Lisää Xbox controller näpylät.
- * TODO: Käännä hahmo aina nopeusvektorin suuntaan.
- * TODO: Aivot vihollisille (hahmoille, jotka ei ole pelaaja)
- * TODO: Toistaiseksi kuvat saavat olla 32x32 (ei tehdä yläviistosta, vaikeampaa kun pitäisi animoida ja tehdä takaa/edestä/sivulta kuvat). Muuta templateja.
  */
 
 public class PajaPeli : PhysicsGame
@@ -36,6 +33,7 @@ public class PajaPeli : PhysicsGame
 	{
         Iskee,
         Kuolee,
+        Tormaa,
         Noukkii,
         Sattuu
 	}
@@ -48,9 +46,9 @@ public class PajaPeli : PhysicsGame
     static Color PELAAJAN_ALOITUSPAIKAN_VARI = Color.FromPaintDotNet(0, 14);
     //  - näitä taas ei kannata kokeilla muuttaa
     static int RUUDUN_KUVAN_LEVEYS = 32;
-    static int RUUDUN_KUVAN_KORKEUS = 48;
-    static int RUUDUN_LEVEYS = 32;
-    static int RUUDUN_KORKEUS = 32;
+    static int RUUDUN_KUVAN_KORKEUS = 32;
+    static int RUUDUN_LEVEYS = 64;
+    static int RUUDUN_KORKEUS = 64;
 
     static int KARTAN_MAKSIMILEVEYS = 100;
     static int KARTAN_MAKSIMIKORKEUS = 100;
@@ -59,9 +57,9 @@ public class PajaPeli : PhysicsGame
     //  Dictionary tarkoittaa hakemistoa, jossa kuhunkin arvoon (esim. väri Color) on 
     //  linkitetty esim. lista kuvia (Image).
     Dictionary<Image, string> Nimet = new Dictionary<Image,string>();
-    Dictionary<Color, List<Image>> Hahmot;
-    Dictionary<Color, List<Image>> Maasto;
-    Dictionary<Color, List<Image>> Esineet;
+    Dictionary<Color, List<Image>> HahmoKuvat;
+    Dictionary<Color, List<Image>> MaastoKuvat;
+    Dictionary<Color, List<Image>> EsineKuvat;
     List<Image> Kartat;
     Dictionary<Tapahtuma, List<SoundEffect>> Tehosteet;
     List<SoundEffect> Musiikki;
@@ -71,16 +69,17 @@ public class PajaPeli : PhysicsGame
     List<Vector> PelaajanAloitusPaikat = new List<Vector>();
     PhysicsObject Pelaaja;
 
+    List<PhysicsObject> Hahmot = new List<PhysicsObject>();
+    List<GameObject> Esineet = new List<GameObject>();
+
     public override void Begin()
-    {
-        PhysicsObject pelaaja = new PhysicsObject(100, 100, Shape.Circle);
-        Add(pelaaja);
-        
+    {        
         // Ladataan peliin lisätty sisältö (taikuutta tapahtuu Apurit-luokassa)
-        Apurit.LataaKuvatKansiosta(@"DynamicContent\Hahmot", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, this, ref Nimet, out Hahmot);
-        Apurit.LataaKuvatKansiosta(@"DynamicContent\Maasto", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, this, ref Nimet, out Maasto);
-        Apurit.LataaKuvatKansiosta(@"DynamicContent\Esineet", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, this, ref Nimet, out Esineet);
-        Apurit.LataaKartatKansiosta(@"DynamicContent\Kartat", KARTAN_MAKSIMILEVEYS, KARTAN_MAKSIMIKORKEUS, this, ref Nimet, out Kartat);
+        Apurit.LataaKuvatKansiosta(@"DynamicContent\Hahmot", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, this, ref Nimet, out HahmoKuvat);
+        Apurit.LataaKuvatKansiosta(@"DynamicContent\Maasto", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, this, ref Nimet, out MaastoKuvat);
+        Apurit.LataaKuvatKansiosta(@"DynamicContent\Esineet", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, this, ref Nimet, out EsineKuvat);
+        Apurit.LataaKartatKansiosta(@"DynamicContent\Kartat", KARTAN_MAKSIMILEVEYS, KARTAN_MAKSIMIKORKEUS, this, ref Nimet, out Kartat);        
+
         // TODO: Tee lataaja äänille ja lataa
         //Tehosteet = LataaAanetKansiosta(@"DynamicContent\Tehosteet");
         //Musiikki = LataaAanetKansiosta(@"DynamicContent\Musiikki");
@@ -91,8 +90,8 @@ public class PajaPeli : PhysicsGame
         // TODO: Näytä valikko, jolla voi valita kentän.
 
         ValittuKartta = RandomGen.SelectOne<Image>(Kartat);
-        LataaKentta(ValittuKartta);
         LisaaPelaajaPeliin();
+        LataaKentta(ValittuKartta);
 
         PhoneBackButton.Listen(ConfirmExit, "Lopeta peli");
         Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
@@ -102,11 +101,64 @@ public class PajaPeli : PhysicsGame
         Keyboard.Listen(Key.Down,   ButtonState.Down, LiikutaPelaajaa, null, new Vector( 0, -PELAAJAN_KAVELYNOPEUS ));
 
         // TODO: Tee näppäinkuuntelijat, joilla voi valita kentän, pelaajahahmon, taustamusan
+        //Apurit.VaihdaKokoruuduntilaan(this.Window.Handle, true);
+
+        Timer.SingleShot(0.1, TeeLoppuSilausPelille);
+    }
+
+    void TeeLoppuSilausPelille()
+    {
+        // Siirrä pelaaja aloituspaikkaan. Ja tuo se näkyviin.
+        if (PelaajanAloitusPaikat.Count == 0)
+            PelaajanAloitusPaikat.Add(new Vector(0, 0));
+        Vector paikka = RandomGen.SelectOne<Vector>(PelaajanAloitusPaikat);
+        Pelaaja.Position = paikka;
+        Pelaaja.IsVisible = true;
+        Pelaaja.IgnoresCollisionResponse = false;
+
+        // Lisää maastoa esineiden ja hahmojen alle
+        foreach (GameObject esine in Esineet)
+        {
+            LisaaTaustaMaasto(esine);
+        }
+        foreach (GameObject hahmo in Hahmot)
+        {
+            LisaaTaustaMaasto(hahmo);
+
+            // Pistä samalla viholliset liikkeelle
+            // Et ole itsesi vihollinen (hyppää yli)
+            if (hahmo != Pelaaja)
+            {
+                RandomMoverBrain aivot = new RandomMoverBrain(PELAAJAN_KAVELYNOPEUS / 10);
+                aivot.TurnWhileMoving = true;
+                hahmo.Brain = aivot;
+            }
+        }
+    }
+
+    void LisaaTaustaMaasto(GameObject esineTaiHahmo)
+    {
+        GameObject maasto = null;
+        foreach (GameObject lahin in GetObjectsAt(esineTaiHahmo.Position, esineTaiHahmo.Width * 1.5))
+        {
+            // On esine itse tai este (tai hahmo)
+            if (lahin == esineTaiHahmo || lahin is PhysicsObject)
+                continue;
+            maasto = lahin;
+            break; // Lopettaa etsinnän
+        }
+        GameObject uusiMaasto = new GameObject(maasto.Width, maasto.Height);
+        uusiMaasto.Color = maasto.Color;
+        uusiMaasto.Image = maasto.Image;
+        uusiMaasto.Tag = maasto.Tag;
+        uusiMaasto.Position = esineTaiHahmo.Position;
+        Add(uusiMaasto);
     }
 
     void LiikutaPelaajaa(Vector vektori)
     {
         Pelaaja.Push(vektori);
+        Pelaaja.Angle = Pelaaja.Velocity.Angle; // Käännä pelaajaa
     }
     
     void LataaKentta(Image karttaKuva)
@@ -116,18 +168,18 @@ public class PajaPeli : PhysicsGame
   
         //2. Kerrotaan mitä aliohjelmaa kutsutaan, kun tietyn värinen pikseli tulee vastaan kuvatiedostossa.
         HashSet<Color> varatutVarit = new HashSet<Color>();
-        Apurit.LisaaKasittelijatVareille(new List<Color>(Maasto.Keys), ruudut, LisaaMaastoaKartalle, ref varatutVarit);
-        Apurit.LisaaKasittelijatVareille(new List<Color>(Hahmot.Keys), ruudut, LisaaHahmoKartalle, ref varatutVarit);
-        Apurit.LisaaKasittelijatVareille(new List<Color>(Esineet.Keys), ruudut, LisaaEsineKartalle, ref varatutVarit);
+        Apurit.LisaaKasittelijatVareille(new List<Color>(MaastoKuvat.Keys), ruudut, LisaaMaastoaKartalle, ref varatutVarit);
+        Apurit.LisaaKasittelijatVareille(new List<Color>(HahmoKuvat.Keys), ruudut, LisaaHahmoKartalle, ref varatutVarit);
+        Apurit.LisaaKasittelijatVareille(new List<Color>(EsineKuvat.Keys), ruudut, LisaaEsineKartalle, ref varatutVarit);
         // Loput värit tulkitaan maastoksi
         Apurit.LisaaKasittelijatVareille(Apurit.AnnaKaikkiKuvanVarit(karttaKuva), ruudut, LisaaMaastoaKartalle, ref varatutVarit);
         
         //3. Execute luo kentän
         //   Parametreina leveys ja korkeus
-        ruudut.Execute(RUUDUN_LEVEYS, RUUDUN_KORKEUS);
+        ruudut.Execute(RUUDUN_LEVEYS+1, RUUDUN_KORKEUS+1);
     }
 
-    #region PeliOlioidenLisääminen
+#region PeliOlioidenLisääminen
     void LisaaMaastoaKartalle(Vector paikka, double leveys, double korkeus, Color vari)
     {
         // Tumma väri, ei voi läpäistä.
@@ -150,9 +202,9 @@ public class PajaPeli : PhysicsGame
         maastoOlio.Position = paikka;
 
         // Aseta kuva, jos sellainen on
-        if (Maasto.ContainsKey(vari))
+        if (MaastoKuvat.ContainsKey(vari))
         {
-            maastoOlio.Image = RandomGen.SelectOne<Image>(Maasto[vari]);
+            maastoOlio.Image = RandomGen.SelectOne<Image>(MaastoKuvat[vari]);
             maastoOlio.Tag = Nimet[maastoOlio.Image];
         }
     }
@@ -166,34 +218,36 @@ public class PajaPeli : PhysicsGame
         else
         {
             PhysicsObject hahmo = new PhysicsObject(leveys, korkeus);
-            hahmo.CanRotate = false;
             hahmo.Position = paikka;
-            hahmo.Image = RandomGen.SelectOne<Image>(Hahmot[vari]);
+            hahmo.Image = RandomGen.SelectOne<Image>(HahmoKuvat[vari]);
             hahmo.Tag = Nimet[hahmo.Image];
             Add(hahmo, 2);
+            Hahmot.Add(hahmo);
         }
     }
     void LisaaEsineKartalle( Vector paikka, double leveys, double korkeus, Color vari)
     {
-        GameObject esine = new GameObject(leveys, korkeus);
-        esine.Image = RandomGen.SelectOne<Image>(Esineet[vari]);
+        PhysicsObject esine = new PhysicsObject(leveys, korkeus);
+        esine.Image = RandomGen.SelectOne<Image>(EsineKuvat[vari]);
         esine.Tag = Nimet[esine.Image];
         Add(esine, 1);
+        Esineet.Add(esine);
+
+        // Kun pelaaja osuu esineeseen, kutsutaan EsineKerattu aliohjelmaa
+        AddCollisionHandler(Pelaaja, EsineKerattu);
     }
     void LisaaPelaajaPeliin()
     {
-        if (PelaajanAloitusPaikat.Count == 0)
-            PelaajanAloitusPaikat.Add(new Vector(0, 0));
-        Vector paikka = RandomGen.SelectOne<Vector>(PelaajanAloitusPaikat);
-        Pelaaja = new PhysicsObject(RUUDUN_LEVEYS, RUUDUN_KORKEUS);
-        Pelaaja.CanRotate = false;
-        Pelaaja.Position = paikka;
-        
+        Pelaaja = new PhysicsObject(RUUDUN_LEVEYS-2, RUUDUN_KORKEUS-2);
         Pelaaja.LinearDamping = 1-PELAAJAN_LIUKUMISVAKIO;
+        Pelaaja.IsVisible = false;
+        Pelaaja.IgnoresCollisionResponse = true;
         Add(Pelaaja, 2);
-        if (Hahmot.ContainsKey(PELAAJAN_ALOITUSPAIKAN_VARI))
+        Hahmot.Add(Pelaaja);
+
+        if (HahmoKuvat.ContainsKey(PELAAJAN_ALOITUSPAIKAN_VARI))
         {
-            Pelaaja.Image = RandomGen.SelectOne<Image>(Hahmot[PELAAJAN_ALOITUSPAIKAN_VARI]);
+            Pelaaja.Image = RandomGen.SelectOne<Image>(HahmoKuvat[PELAAJAN_ALOITUSPAIKAN_VARI]);
         }
         else
         {
@@ -202,5 +256,27 @@ public class PajaPeli : PhysicsGame
         }
         Camera.Follow(Pelaaja);
     }
-    #endregion
+#endregion
+
+#region PeliTapahtumienKäsittely
+    void EsineKerattu(PhysicsObject pelaaja, PhysicsObject esine)
+    {
+        ToistaTehoste(Tapahtuma.Noukkii);
+        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
+    }
+    void OsuuHahmoon(PhysicsObject pelaaja, PhysicsObject hahmo)
+    {
+        ToistaTehoste(Tapahtuma.Kuolee);
+        pelaaja.Destroy();
+        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
+    }
+    void ToistaTehoste(Tapahtuma tapahtuma)
+    {
+        if (Tehosteet.ContainsKey(tapahtuma))
+        {
+            SoundEffect tehoste = RandomGen.SelectOne<SoundEffect>(Tehosteet[tapahtuma]);
+            tehoste.Play();
+        }
+    }
+#endregion
 }
