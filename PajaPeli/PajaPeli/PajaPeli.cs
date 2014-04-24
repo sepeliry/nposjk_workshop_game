@@ -101,7 +101,7 @@ public class PajaPeli : PhysicsGame
         Keyboard.Listen(Key.Down,   ButtonState.Down, LiikutaPelaajaa, null, new Vector( 0, -PELAAJAN_KAVELYNOPEUS ));
 
         // TODO: Tee näppäinkuuntelijat, joilla voi valita kentän, pelaajahahmon, taustamusan
-        //Apurit.VaihdaKokoruuduntilaan(this.Window.Handle, true);
+        Apurit.VaihdaKokoruuduntilaan(this.Window.Handle, true);
 
         Timer.SingleShot(0.1, TeeLoppuSilausPelille);
     }
