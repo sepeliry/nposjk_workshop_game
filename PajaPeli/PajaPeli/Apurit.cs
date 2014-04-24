@@ -5,9 +5,12 @@ using System.Linq;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
+using Jypeli.Widgets;
 
-static class Apurit
+static class Apuri
 {
+    public static PajaPeli Peli = null;
+
     public static void VaihdaKokoruuduntilaan(IntPtr Hwnd, bool ylin)
     {
         // Peli on kokoruudun kokoinen ja aina päällimmäinen.
@@ -29,7 +32,7 @@ static class Apurit
                 listaVareja.GroupBy(item => item.AlphaComponent).OrderByDescending(g => g.Count()).Select(g => g.Key).First());
     }
 
-    public static void LataaKartatKansiosta(string kansio, int maksimiLeveys, int maksimiKorkeus, Game peli,
+    public static void LataaKartatKansiosta(string kansio, int maksimiLeveys, int maksimiKorkeus,
         ref Dictionary<Image, string> nimet, out List<Image> karttaKokoelma)
     {
         karttaKokoelma = new List<Image>();
@@ -41,7 +44,7 @@ static class Apurit
 
             if (ladattuKuva.Width > maksimiLeveys || ladattuKuva.Height > maksimiKorkeus)
             {
-                peli.MessageDisplay.Add("Karttakuva " + Path.GetFileName(kuvaPolku) + " on liian suuri.");
+                Peli.MessageDisplay.Add("Karttakuva " + Path.GetFileName(kuvaPolku) + " on liian suuri.");
                 continue; // Hyppää seuraavaan tiedostoon (for silmukassa)
             }
 
@@ -51,7 +54,7 @@ static class Apurit
     }
 
 
-    public static void LataaKuvatKansiosta(string kansio, int vaadittuLeveys, int vaadittuKorkeus, Game peli,
+    public static void LataaKuvatKansiosta(string kansio, int vaadittuLeveys, int vaadittuKorkeus,
         ref Dictionary<Image, string> nimet, out Dictionary<Color, List<Image>> kuvaKokoelma)
     {
         kuvaKokoelma = new Dictionary<Color, List<Image>>();
@@ -63,7 +66,7 @@ static class Apurit
 
             if (ladattuKuva.Width != vaadittuLeveys || ladattuKuva.Height != vaadittuKorkeus)
             {
-                peli.MessageDisplay.Add("Kuva " + Path.GetFileName(kuvaPolku) + " on väärän kokoinen.");
+                Peli.MessageDisplay.Add("Kuva " + Path.GetFileName(kuvaPolku) + " on väärän kokoinen.");
                 continue; // Hyppää seuraavaan tiedostoon (for silmukassa)
             }
 
@@ -71,13 +74,13 @@ static class Apurit
             Color varikoodi = ladattuKuva[0, 0];
             if (varikoodi == Color.White || varikoodi.AlphaComponent == 0)
             {
-                peli.MessageDisplay.Add("Kuvan " + Path.GetFileName(kuvaPolku) + " värikoodi on valkoinen tai läpinäkyvä, mitä ei sallita.");
+                Peli.MessageDisplay.Add("Kuvan " + Path.GetFileName(kuvaPolku) + " värikoodi on valkoinen tai läpinäkyvä, mitä ei sallita.");
                 continue; // Hyppää seuraavaan tiedostoon (for silmukassa)
             }
 
             // Korvaa värikoodi naapuripikseleistä yleisimmällä.
             Color[] viereiset = new Color[] { ladattuKuva[1, 0], ladattuKuva[0, 1], ladattuKuva[1, 1] };
-            ladattuKuva[0, 0] = Apurit.HaeYleisinVariKomponenteittain(viereiset);
+            ladattuKuva[0, 0] = Apuri.HaeYleisinVariKomponenteittain(viereiset);
 
             // Pistä kuva, siihen liittyvä värikoodi ja kuvan nimi talteen
             if (!kuvaKokoelma.ContainsKey( varikoodi ))
@@ -112,7 +115,7 @@ static class Apurit
      {"LIIKKUU", PajaPeli.Tapahtuma.Liikkuu },
      {"GAMEOVER", PajaPeli.Tapahtuma.PeliLoppuu }};
 
-    public static void LataaAanetKansiosta(string kansio, Game peli, out Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>> tehosteKokoelma)
+    public static void LataaAanetKansiosta(string kansio, out Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>> tehosteKokoelma)
     {
         tehosteKokoelma = new Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>>();
 
@@ -134,7 +137,7 @@ static class Apurit
                 }
                 if (tapahtuma == PajaPeli.Tapahtuma.Tuntematon)
                 {
-                    peli.MessageDisplay.Add("Tehostetta " + tehoste + ".wav ei osattu liittää mihinkään tapahtumaan. Tarkista tehosteen nimi.");
+                    Peli.MessageDisplay.Add("Tehostetta " + tehoste + ".wav ei osattu liittää mihinkään tapahtumaan. Tarkista tehosteen nimi.");
                 }
                 else
                 {
@@ -146,12 +149,12 @@ static class Apurit
             }
             catch (Exception)
             {
-                peli.MessageDisplay.Add("Äänitehoste " + tehosteenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
+                Peli.MessageDisplay.Add("Äänitehoste " + tehosteenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
             }
         }
     }
 
-    public static void LataaAanetKansiosta(string kansio, Game peli, out Dictionary<string, SoundEffect> musiikkiKokoelma)
+    public static void LataaAanetKansiosta(string kansio, out Dictionary<string, SoundEffect> musiikkiKokoelma)
     {
         musiikkiKokoelma = new Dictionary<string, SoundEffect>();
 
@@ -167,12 +170,139 @@ static class Apurit
             }
             catch (Exception)
             {
-                peli.MessageDisplay.Add("Musiikkikappaletta " + kappaleenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
+                Peli.MessageDisplay.Add("Musiikkikappaletta " + kappaleenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
             }
         }
     }
+
+
+    // Valikko"hässäkkä
+    public static void NaytaAlkuValikko()
+    {
+        MultiSelectWindow alkuValikko = new MultiSelectWindow("PajaPelin alkuvalikko",
+                "Aloita satunnainen peli", "Valitse pelisi", "Lopeta");
+        alkuValikko.AddItemHandler(0, Peli.AloitaSatunnainenPeli);
+        alkuValikko.AddItemHandler(1, ValitsePelaajaHahmo);
+        alkuValikko.AddItemHandler(2, Peli.Exit);
+        alkuValikko.DefaultCancel = 2;
+        Peli.Add(alkuValikko);
+    }
+
+    public static void ValitsePelaajaHahmo()
+    {
+        
+        List<string> hahmojenNimet = new List<string>();
+        foreach (var pelihahmo in Peli.HahmoKuvat[PajaPeli.PELAAJAN_ALOITUSPAIKAN_VARI])
+        {
+            hahmojenNimet.Add(Peli.Nimet[pelihahmo]);
+        }
+
+        if (hahmojenNimet.Count > 0)
+        {
+            MultiSelectWindow pelaajaValikko = new MultiSelectWindow("Valitse pelaajahahmo", hahmojenNimet.ToArray());
+            for (int i = 0; i < hahmojenNimet.Count; i++)
+            {
+                pelaajaValikko.AddItemHandler(i, PelihahmoValittu, i, hahmojenNimet);
+            }
+            Peli.Add(pelaajaValikko);
+        }
+        else
+        {
+            ValitseKartta();
+        }
+    }
+
+    public static void PelihahmoValittu(int valinta, List<string> hahmojenNimet)
+    {
+        var res = Peli.Nimet
+            .GroupBy(p => p.Value)
+            .ToDictionary(g => g.Key, g => g.Select(pp => pp.Key).ToList());
+        
+        string valitunHahmonNimi = hahmojenNimet[valinta];
+        Peli.ValittuPelaajaHahmo = res[valitunHahmonNimi].First();
+        ValitseKartta();
+    }
+
+    public static void ValitseKartta()
+    {
+        List<string> karttojenNimet = new List<string>();
+        foreach (var kartta in Peli.Kartat)
+        {
+            karttojenNimet.Add(Peli.Nimet[kartta]);
+        }
+
+        if (karttojenNimet.Count > 0)
+        {
+            MultiSelectWindow karttaValikko = new MultiSelectWindow("Valitse kartta", karttojenNimet.ToArray());
+            for (int i = 0; i < karttojenNimet.Count; i++)
+            {
+                karttaValikko.AddItemHandler(i, KarttaValittu, i, karttojenNimet);
+            }
+            Peli.Add(karttaValikko);
+        }
+        else
+        {
+            ValitseTaustamusiikki();
+        }
+    }
+
+    public static void KarttaValittu(int valinta, List<string> karttojenNimet)
+    {
+        var res = Peli.Nimet
+           .GroupBy(p => p.Value)
+           .ToDictionary(g => g.Key, g => g.Select(pp => pp.Key).ToList());
+
+        string valitunKartanNimi = karttojenNimet[valinta];
+        Peli.ValittuKartta = res[valitunKartanNimi].First();
+        ValitseTaustamusiikki();
+    }
+
+    public static void ValitseTaustamusiikki()
+    {
+        List<string> musiikinNimet = new List<string>();
+        foreach (string kappaleenNimi in Peli.Musiikki.Keys)
+        {
+            musiikinNimet.Add(kappaleenNimi);
+        }
+
+        if (musiikinNimet.Count > 0)
+        {
+
+            MultiSelectWindow karttaValikko = new MultiSelectWindow("Valitse taustamusiikki", musiikinNimet.ToArray());
+            for (int i = 0; i < musiikinNimet.Count; i++)
+            {
+                karttaValikko.AddItemHandler(i, MusiikkiValittu, i, musiikinNimet);
+            }
+            Peli.Add(karttaValikko);
+        }
+        else
+        {
+            Peli.AloitaTiettyPeli();
+        }
+    }
+
+    public static void MusiikkiValittu(int valinta, List<string> musiikinNimet)
+    {
+        string valitunKappaleenNimi = musiikinNimet[valinta];
+        Peli.ValittuMusiikki = Peli.Musiikki[valitunKappaleenNimi];
+        Peli.AloitaTiettyPeli();
+    }
+
 }
 
+public static class IDictionaryExtensions
+{
+    public static TKey FindKeyByValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TValue value)
+    {
+        if (dictionary == null)
+            throw new ArgumentNullException("dictionary");
+
+        foreach (KeyValuePair<TKey, TValue> pair in dictionary)
+            if (value.Equals(pair.Value)) return pair.Key;
+
+        throw new Exception("the value is not found in the dictionary");
+    }
+}
 
 class User32
 {
