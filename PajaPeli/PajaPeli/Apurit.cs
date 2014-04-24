@@ -103,6 +103,74 @@ static class Apurit
             }
         }
     }
+
+    static Dictionary<string, PajaPeli.Tapahtuma> NimiTapahtumaksi = new Dictionary<string,PajaPeli.Tapahtuma>(){
+     {"ISKEE", PajaPeli.Tapahtuma.Iskee},
+     {"SATTUU", PajaPeli.Tapahtuma.Sattuu },
+     {"KUOLEE", PajaPeli.Tapahtuma.Kuolee },
+     {"ESINE", PajaPeli.Tapahtuma.Noukkii },
+     {"LIIKKUU", PajaPeli.Tapahtuma.Liikkuu },
+     {"GAMEOVER", PajaPeli.Tapahtuma.PeliLoppuu }};
+
+    public static void LataaAanetKansiosta(string kansio, Game peli, out Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>> tehosteKokoelma)
+    {
+        tehosteKokoelma = new Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>>();
+
+        string[] aaniTiedostoPolut = Directory.GetFiles(kansio, "*.wav", SearchOption.TopDirectoryOnly);
+        foreach (var aaniPolku in aaniTiedostoPolut)
+        {
+            // TODO: SOUND EFFECTS CANNOT BE LOADED FROM FILE ;(   (for now)
+            string tehosteenNimi = Path.GetFileNameWithoutExtension(aaniPolku);
+            try
+            {
+                SoundEffect tehoste = Game.LoadSoundEffect(tehosteenNimi);
+
+                // Lue avainsana
+                PajaPeli.Tapahtuma tapahtuma = PajaPeli.Tapahtuma.Tuntematon;
+                foreach (var osanimi in NimiTapahtumaksi.Keys)
+                {
+                    if (tehosteenNimi.ToUpper().Contains(osanimi))
+                        tapahtuma = NimiTapahtumaksi[osanimi];
+                }
+                if (tapahtuma == PajaPeli.Tapahtuma.Tuntematon)
+                {
+                    peli.MessageDisplay.Add("Tehostetta " + tehoste + ".wav ei osattu liittää mihinkään tapahtumaan. Tarkista tehosteen nimi.");
+                }
+                else
+                {
+                    // Pistä kuva, siihen liittyvä värikoodi ja kuvan nimi talteen
+                    if (!tehosteKokoelma.ContainsKey(tapahtuma))
+                        tehosteKokoelma.Add(tapahtuma, new List<SoundEffect>());
+                    tehosteKokoelma[tapahtuma].Add(tehoste);
+                }
+            }
+            catch (Exception)
+            {
+                peli.MessageDisplay.Add("Äänitehoste " + tehosteenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
+            }
+        }
+    }
+
+    public static void LataaAanetKansiosta(string kansio, Game peli, out Dictionary<string, SoundEffect> musiikkiKokoelma)
+    {
+        musiikkiKokoelma = new Dictionary<string, SoundEffect>();
+
+        string[] aaniTiedostoPolut = Directory.GetFiles(kansio, "*.wav", SearchOption.TopDirectoryOnly);
+        foreach (var aaniPolku in aaniTiedostoPolut)
+        {
+            // TODO: SOUND EFFECTS CANNOT BE LOADED FROM FILE ;(   (for now)
+            string kappaleenNimi = Path.GetFileNameWithoutExtension(aaniPolku);
+            try
+            {
+                SoundEffect kappale = Game.LoadSoundEffect(kappaleenNimi);
+                musiikkiKokoelma[kappaleenNimi] = kappale;
+            }
+            catch (Exception)
+            {
+                peli.MessageDisplay.Add("Musiikkikappaletta " + kappaleenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
+            }
+        }
+    }
 }
 
 

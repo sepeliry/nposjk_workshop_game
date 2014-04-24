@@ -22,20 +22,19 @@ using System.IO;
  *          - alkuvalikko, josta valitaan "Satunnainen peli", "Valikoitu peli" (ks alla.), "Lopeta".
  *          - "Valikoitu peli"-valikko, joilla voi (alivalikoista) valita kentän, pelihahmon ja taustamusiikin.
  *             Tee myös pikanäppäimet, joilla pelin aikana voi vaihtaa näitä.
- * TODO: Toteuta pelaajahahmon lyöntitoiminto ja hyppytoiminto. Hypätessä voit välttää törmäyksen maaston (mutta ei esteiden) kanssa.
- * TODO: Harkitse simppelin inventaariosysteemin toteuttamista (numeroilla 1-9 valitaan mikä on kädessä, noukkia voi aseita, avaimia jne)
- * TODO: Lisää Xbox controller näpylät.
  */
 
 public class PajaPeli : PhysicsGame
 {
-    enum Tapahtuma
+    public enum Tapahtuma
 	{
         Iskee,
         Kuolee,
-        Tormaa,
+        Sattuu,
         Noukkii,
-        Sattuu
+        Liikkuu,
+        PeliLoppuu,
+        Tuntematon
 	}
 
     // Nämä ovat peliin liittyviä vakioita. 
@@ -62,12 +61,16 @@ public class PajaPeli : PhysicsGame
     Dictionary<Color, List<Image>> EsineKuvat;
     List<Image> Kartat;
     Dictionary<Tapahtuma, List<SoundEffect>> Tehosteet;
-    List<SoundEffect> Musiikki;
+    Dictionary<string, SoundEffect> Musiikki;
 
     // Pelin tilanne ja tilatietoa tallentavat muuttujat
     Image ValittuKartta;
     List<Vector> PelaajanAloitusPaikat = new List<Vector>();
     PhysicsObject Pelaaja;
+
+    // Liikkumisesta kuuluva ääni ja laskuri sen hiljentämiseksi
+    Sound liikkumisAani = null;
+    int liikutusNappejaPainettuna = 0;
 
     List<PhysicsObject> Hahmot = new List<PhysicsObject>();
     List<GameObject> Esineet = new List<GameObject>();
@@ -81,9 +84,13 @@ public class PajaPeli : PhysicsGame
         Apurit.LataaKartatKansiosta(@"DynamicContent\Kartat", KARTAN_MAKSIMILEVEYS, KARTAN_MAKSIMIKORKEUS, this, ref Nimet, out Kartat);        
 
         // TODO: Tee lataaja äänille ja lataa
-        //Tehosteet = LataaAanetKansiosta(@"DynamicContent\Tehosteet");
-        //Musiikki = LataaAanetKansiosta(@"DynamicContent\Musiikki");
-        
+        Apurit.LataaAanetKansiosta(@"DynamicContent\Tehosteet", this, out Tehosteet);   
+        Apurit.LataaAanetKansiosta(@"DynamicContent\Musiikki", this, out Musiikki);   
+
+        if (Musiikki.Count > 0)
+        {
+            SoitaSatunnainenBiisi();
+        }
         // TODO: Käynnistä taustamusiikki, kun se loppuu kutsu aliohjelmaa, joka käynnistää 
 
         // TODO: Näytä valikko, jolla voi valita pelaajahahmon.
@@ -95,13 +102,23 @@ public class PajaPeli : PhysicsGame
 
         PhoneBackButton.Listen(ConfirmExit, "Lopeta peli");
         Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
-        Keyboard.Listen(Key.Left,   ButtonState.Down, LiikutaPelaajaa, null, new Vector( -PELAAJAN_KAVELYNOPEUS, 0 ));
+        Keyboard.Listen(Key.Left,   ButtonState.Down, LiikutaPelaajaa, "Liikuta pelaajaa nuolinäppäimillä", new Vector( -PELAAJAN_KAVELYNOPEUS, 0 ));
         Keyboard.Listen(Key.Right,  ButtonState.Down, LiikutaPelaajaa, null, new Vector( PELAAJAN_KAVELYNOPEUS, 0 ));
         Keyboard.Listen(Key.Up,     ButtonState.Down, LiikutaPelaajaa, null, new Vector( 0, PELAAJAN_KAVELYNOPEUS ));
         Keyboard.Listen(Key.Down,   ButtonState.Down, LiikutaPelaajaa, null, new Vector( 0, -PELAAJAN_KAVELYNOPEUS ));
 
+        Keyboard.Listen(Key.Left, ButtonState.Pressed, AloitaLiike, null);
+        Keyboard.Listen(Key.Right, ButtonState.Pressed, AloitaLiike, null);
+        Keyboard.Listen(Key.Up, ButtonState.Pressed, AloitaLiike, null);
+        Keyboard.Listen(Key.Down, ButtonState.Pressed, AloitaLiike, null);
+        Keyboard.Listen(Key.Left, ButtonState.Released, LopetaLiike, null);
+        Keyboard.Listen(Key.Right, ButtonState.Released, LopetaLiike, null);
+        Keyboard.Listen(Key.Up, ButtonState.Released, LopetaLiike, null);
+        Keyboard.Listen(Key.Down, ButtonState.Released, LopetaLiike, null);
+
+
         // TODO: Tee näppäinkuuntelijat, joilla voi valita kentän, pelaajahahmon, taustamusan
-        Apurit.VaihdaKokoruuduntilaan(this.Window.Handle, true);
+        //Apurit.VaihdaKokoruuduntilaan(this.Window.Handle, true);
 
         Timer.SingleShot(0.1, TeeLoppuSilausPelille);
     }
@@ -135,31 +152,6 @@ public class PajaPeli : PhysicsGame
             }
         }
     }
-
-    void LisaaTaustaMaasto(GameObject esineTaiHahmo)
-    {
-        GameObject maasto = null;
-        foreach (GameObject lahin in GetObjectsAt(esineTaiHahmo.Position, esineTaiHahmo.Width * 1.5))
-        {
-            // On esine itse tai este (tai hahmo)
-            if (lahin == esineTaiHahmo || lahin is PhysicsObject)
-                continue;
-            maasto = lahin;
-            break; // Lopettaa etsinnän
-        }
-        GameObject uusiMaasto = new GameObject(maasto.Width, maasto.Height);
-        uusiMaasto.Color = maasto.Color;
-        uusiMaasto.Image = maasto.Image;
-        uusiMaasto.Tag = maasto.Tag;
-        uusiMaasto.Position = esineTaiHahmo.Position;
-        Add(uusiMaasto);
-    }
-
-    void LiikutaPelaajaa(Vector vektori)
-    {
-        Pelaaja.Push(vektori);
-        Pelaaja.Angle = Pelaaja.Velocity.Angle; // Käännä pelaajaa
-    }
     
     void LataaKentta(Image karttaKuva)
     {
@@ -188,14 +180,18 @@ public class PajaPeli : PhysicsGame
         {
             PhysicsObject este = PhysicsObject.CreateStaticObject(leveys, korkeus);
             maastoOlio = este;
-            Add(maastoOlio, -1);
+            este.CollisionIgnoreGroup = 1; // Suorituskykyoptimointi
+            Add(este, -1);
+
+            // Kun pelaaja osuu hahmoon, kutsutaan PelaajaOsuuHahmoon aliohjelmaa
+            AddCollisionHandler(Pelaaja, este, PelaajaOsuuEsteeseen);
         }
         // Vaalea väri, ihan vaan taustaa
         else
         {
             GameObject tausta = new GameObject(leveys, korkeus);
             maastoOlio = tausta;
-            Add(maastoOlio, -2);
+            Add(tausta, -2);
         }
 
         maastoOlio.Color = vari;
@@ -223,18 +219,21 @@ public class PajaPeli : PhysicsGame
             hahmo.Tag = Nimet[hahmo.Image];
             Add(hahmo, 2);
             Hahmot.Add(hahmo);
+
+            // Kun pelaaja osuu hahmoon, kutsutaan PelaajaOsuuHahmoon aliohjelmaa
+            AddCollisionHandler(Pelaaja, hahmo, PelaajaOsuuHahmoon);
         }
     }
     void LisaaEsineKartalle( Vector paikka, double leveys, double korkeus, Color vari)
     {
-        PhysicsObject esine = new PhysicsObject(leveys, korkeus);
+        PhysicsObject esine = new PhysicsObject(leveys-2, korkeus-2);
         esine.Image = RandomGen.SelectOne<Image>(EsineKuvat[vari]);
         esine.Tag = Nimet[esine.Image];
         Add(esine, 1);
         Esineet.Add(esine);
 
-        // Kun pelaaja osuu esineeseen, kutsutaan EsineKerattu aliohjelmaa
-        AddCollisionHandler(Pelaaja, EsineKerattu);
+        // Kun pelaaja osuu esineeseen, kutsutaan PelaajaKeraaEsineen aliohjelmaa
+        AddCollisionHandler(Pelaaja, esine, PelaajaKeraaEsineen);
     }
     void LisaaPelaajaPeliin()
     {
@@ -256,20 +255,56 @@ public class PajaPeli : PhysicsGame
         }
         Camera.Follow(Pelaaja);
     }
+    void LisaaTaustaMaasto(GameObject esineTaiHahmo)
+    {
+        GameObject maasto = null;
+        foreach (GameObject lahin in GetObjectsAt(esineTaiHahmo.Position, esineTaiHahmo.Width * 1.5))
+        {
+            // On esine itse tai este (tai hahmo)
+            if (lahin == esineTaiHahmo || lahin is PhysicsObject)
+                continue;
+            maasto = lahin;
+            break; // Lopettaa etsinnän
+        }
+        GameObject uusiMaasto = new GameObject(maasto.Width, maasto.Height);
+        uusiMaasto.Color = maasto.Color;
+        uusiMaasto.Image = maasto.Image;
+        uusiMaasto.Tag = maasto.Tag;
+        uusiMaasto.Position = esineTaiHahmo.Position;
+        Add(uusiMaasto);
+    }
 #endregion
 
 #region PeliTapahtumienKäsittely
-    void EsineKerattu(PhysicsObject pelaaja, PhysicsObject esine)
+    void PelaajaKeraaEsineen(PhysicsObject pelaaja, PhysicsObject esine)
     {
         ToistaTehoste(Tapahtuma.Noukkii);
         // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
     }
-    void OsuuHahmoon(PhysicsObject pelaaja, PhysicsObject hahmo)
+    void PelaajaOsuuHahmoon(PhysicsObject pelaaja, PhysicsObject hahmo)
     {
         ToistaTehoste(Tapahtuma.Kuolee);
+
         pelaaja.Destroy();
+
+        Timer.SingleShot(0.5, PeliLoppuu);
         // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
     }
+    void PelaajaOsuuEsteeseen(PhysicsObject pelaaja, PhysicsObject este)
+    {
+        ToistaTehoste(Tapahtuma.Sattuu);
+        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
+    }
+    void PeliLoppuu()
+    {
+        Label loppu = new Label("GAME OVER (press ESC)");
+        loppu.Font = Font.DefaultLargeBold;
+        Add(loppu);
+        ToistaTehoste(Tapahtuma.PeliLoppuu);
+    }  
+#endregion
+
+#region ÄäntenSoitto
     void ToistaTehoste(Tapahtuma tapahtuma)
     {
         if (Tehosteet.ContainsKey(tapahtuma))
@@ -278,5 +313,42 @@ public class PajaPeli : PhysicsGame
             tehoste.Play();
         }
     }
+    private void SoitaSatunnainenBiisi()
+    {
+        SoundEffect biisi = RandomGen.SelectOne<SoundEffect>(new List<SoundEffect>(Musiikki.Values));
+        biisi.Play();
+
+        // Kun biisi loppuu, aoita uusi.
+        Timer.SingleShot(biisi.Duration.Seconds + 2.0, SoitaSatunnainenBiisi);
+    }
+#endregion
+
+#region NapinPainallustenKäsittely
+    void LiikutaPelaajaa(Vector vektori)
+    {
+        Pelaaja.Push(vektori);
+        Pelaaja.Angle = Pelaaja.Velocity.Angle; // Käännä pelaajaa
+    }
+
+    void AloitaLiike()
+    {
+        if (liikutusNappejaPainettuna == 0 && Tehosteet.ContainsKey(Tapahtuma.Liikkuu))
+        {
+            liikkumisAani = RandomGen.SelectOne<SoundEffect>(Tehosteet[Tapahtuma.Liikkuu]).CreateSound();
+            liikkumisAani.IsLooped = true;
+            liikkumisAani.Volume = 0.05;
+            liikkumisAani.Play();
+        }
+        liikutusNappejaPainettuna++;
+    }
+    void LopetaLiike()
+    {
+        liikutusNappejaPainettuna--;
+        if (liikutusNappejaPainettuna == 0 && liikkumisAani!=null)
+        {
+            liikkumisAani.Stop();
+        }
+    }
+    
 #endregion
 }
