@@ -302,12 +302,15 @@ public class PajaPeli : PhysicsGame
             maasto = lahin;
             break; // Lopettaa etsinnän
         }
-        GameObject uusiMaasto = new GameObject(maasto.Width, maasto.Height);
-        uusiMaasto.Color = maasto.Color;
-        uusiMaasto.Image = maasto.Image;
-        uusiMaasto.Tag = maasto.Tag;
-        uusiMaasto.Position = esineTaiHahmo.Position;
-        Add(uusiMaasto);
+        if (maasto != null)
+        {
+            GameObject uusiMaasto = new GameObject(maasto.Width, maasto.Height);
+            uusiMaasto.Color = maasto.Color;
+            uusiMaasto.Image = maasto.Image;
+            uusiMaasto.Tag = maasto.Tag;
+            uusiMaasto.Position = esineTaiHahmo.Position;
+            Add(uusiMaasto);
+        }
     }
 #endregion
 
