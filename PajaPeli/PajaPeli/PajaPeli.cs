@@ -77,7 +77,9 @@ public class PajaPeli : PhysicsGame
     List<GameObject> Esineet = new List<GameObject>();
 
     public override void Begin()
-    {        
+    {
+        Apuri.Peli = this;
+
         // Ladataan peliin lisätty sisältö (taikuutta tapahtuu Apurit-luokassa)
         Apuri.LataaKuvatKansiosta(@"DynamicContent\Hahmot", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, ref Nimet, out HahmoKuvat);
         Apuri.LataaKuvatKansiosta(@"DynamicContent\Maasto", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, ref Nimet, out MaastoKuvat);
@@ -94,7 +96,6 @@ public class PajaPeli : PhysicsGame
 
         Mouse.IsCursorVisible = true;
 
-        Apuri.Peli = this;
         Apuri.NaytaAlkuValikko();
         
         Apuri.VaihdaKokoruuduntilaan(this.Window.Handle, true);
