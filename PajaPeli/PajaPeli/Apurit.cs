@@ -190,11 +190,12 @@ static class Apuri
 
     public static void ValitsePelaajaHahmo()
     {
-        
         List<string> hahmojenNimet = new List<string>();
+        Dictionary<string, Image> nimistaKuvat = new Dictionary<string, Image>();
         foreach (var pelihahmo in Peli.HahmoKuvat[PajaPeli.PELAAJAN_ALOITUSPAIKAN_VARI])
         {
             hahmojenNimet.Add(Peli.Nimet[pelihahmo]);
+            nimistaKuvat.Add(Peli.Nimet[pelihahmo], pelihahmo);
         }
 
         if (hahmojenNimet.Count > 0)
@@ -205,10 +206,20 @@ static class Apuri
                 pelaajaValikko.AddItemHandler(i, PelihahmoValittu, i, hahmojenNimet);
             }
             Peli.Add(pelaajaValikko);
+            Timer.SingleShot(0.1, () => NaytaNappienKuvat(pelaajaValikko, nimistaKuvat));
         }
         else
         {
             ValitseKartta();
+        }
+    }
+
+    public static void NaytaNappienKuvat(MultiSelectWindow valikko, Dictionary<string, Image> nimistaKuvat)
+    {
+        foreach (var valinta in valikko.Buttons)
+        {
+            valinta.TextColor = Color.Black;
+            valinta.Image = nimistaKuvat[valinta.Text];
         }
     }
 
@@ -226,9 +237,11 @@ static class Apuri
     public static void ValitseKartta()
     {
         List<string> karttojenNimet = new List<string>();
+        Dictionary<string, Image> nimistaKuvat = new Dictionary<string, Image>();
         foreach (var kartta in Peli.Kartat)
         {
             karttojenNimet.Add(Peli.Nimet[kartta]);
+            nimistaKuvat.Add(Peli.Nimet[kartta], kartta);
         }
 
         if (karttojenNimet.Count > 0)
@@ -239,6 +252,7 @@ static class Apuri
                 karttaValikko.AddItemHandler(i, KarttaValittu, i, karttojenNimet);
             }
             Peli.Add(karttaValikko);
+            Timer.SingleShot(0.1, () => NaytaNappienKuvat(karttaValikko, nimistaKuvat));
         }
         else
         {
@@ -264,16 +278,17 @@ static class Apuri
         {
             musiikinNimet.Add(kappaleenNimi);
         }
+        musiikinNimet.Add("Ei musiikkia");
 
         if (musiikinNimet.Count > 0)
         {
 
-            MultiSelectWindow karttaValikko = new MultiSelectWindow("Valitse taustamusiikki", musiikinNimet.ToArray());
+            MultiSelectWindow musaValikko = new MultiSelectWindow("Valitse taustamusiikki", musiikinNimet.ToArray());
             for (int i = 0; i < musiikinNimet.Count; i++)
             {
-                karttaValikko.AddItemHandler(i, MusiikkiValittu, i, musiikinNimet);
+                musaValikko.AddItemHandler(i, MusiikkiValittu, i, musiikinNimet);
             }
-            Peli.Add(karttaValikko);
+            Peli.Add(musaValikko);
         }
         else
         {
@@ -283,8 +298,11 @@ static class Apuri
 
     public static void MusiikkiValittu(int valinta, List<string> musiikinNimet)
     {
-        string valitunKappaleenNimi = musiikinNimet[valinta];
-        Peli.ValittuMusiikki = Peli.Musiikki[valitunKappaleenNimi];
+        if (valinta < musiikinNimet.Count-1)
+        {
+            string valitunKappaleenNimi = musiikinNimet[valinta];
+            Peli.ValittuMusiikki = Peli.Musiikki[valitunKappaleenNimi];
+        }
         Peli.AloitaTiettyPeli();
     }
 

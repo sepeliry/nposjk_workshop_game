@@ -38,7 +38,7 @@ public class PajaPeli : PhysicsGame
     //  - näitä voi kokeilla muuttaa
     static int PELAAJAN_KAVELYNOPEUS = 1000;
     static double PELAAJAN_LIUKUMISVAKIO = 0.1;
-    static int ESTE_TUMMA_VARI_RAJAARVO = 128;
+    static int ESTE_TUMMA_VARI_RAJAARVO = 200;
     public static Color PELAAJAN_ALOITUSPAIKAN_VARI = Color.FromPaintDotNet(0, 14);
     //  - näitä taas ei kannata kokeilla muuttaa
     static int RUUDUN_KUVAN_LEVEYS = 32;
@@ -97,8 +97,7 @@ public class PajaPeli : PhysicsGame
         Mouse.IsCursorVisible = true;
 
         Apuri.NaytaAlkuValikko();
-        
-        Apuri.VaihdaKokoruuduntilaan(this.Window.Handle, true);
+        //Apuri.VaihdaKokoruuduntilaan(this.Window.Handle, true);
     }
 
     void LisaaNappainKuuntelijat()
@@ -118,6 +117,8 @@ public class PajaPeli : PhysicsGame
         Keyboard.Listen(Key.Up, ButtonState.Released, LopetaLiike, null);
         Keyboard.Listen(Key.Down, ButtonState.Released, LopetaLiike, null);
 
+        ShowControlHelp();
+        
         // TODO: Tee näppäinkuuntelijat, joilla voi valita kentän, pelaajahahmon, taustamusan
     }
 
@@ -336,7 +337,7 @@ public class PajaPeli : PhysicsGame
     }
     void PeliLoppuu()
     {
-        Label loppu = new Label("GAME OVER (press ESC)");
+        Label loppu = new Label("GAME OVER (paina ESC)");
         loppu.Font = Font.DefaultLargeBold;
         Add(loppu);
         ToistaTehoste(Tapahtuma.PeliLoppuu);
