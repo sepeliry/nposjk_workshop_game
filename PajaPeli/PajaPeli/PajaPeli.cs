@@ -78,6 +78,7 @@ public class PajaPeli : PhysicsGame
 
     public override void Begin()
     {
+        //SetWindowSize(1280, 720);
         Apuri.Peli = this;
 
         // Ladataan peliin lisätty sisältö (taikuutta tapahtuu Apurit-luokassa)
@@ -107,6 +108,7 @@ public class PajaPeli : PhysicsGame
         Keyboard.Listen(Key.Right,  ButtonState.Down, LiikutaPelaajaa, null, new Vector( PELAAJAN_KAVELYNOPEUS, 0 ));
         Keyboard.Listen(Key.Up,     ButtonState.Down, LiikutaPelaajaa, null, new Vector( 0, PELAAJAN_KAVELYNOPEUS ));
         Keyboard.Listen(Key.Down,   ButtonState.Down, LiikutaPelaajaa, null, new Vector( 0, -PELAAJAN_KAVELYNOPEUS ));
+        Keyboard.Listen(Key.R,      ButtonState.Released, AloitaAlusta, "Palaa alkuvalikkoon");
 
         Keyboard.Listen(Key.Left, ButtonState.Pressed, AloitaLiike, null);
         Keyboard.Listen(Key.Right, ButtonState.Pressed, AloitaLiike, null);
@@ -122,6 +124,12 @@ public class PajaPeli : PhysicsGame
         // TODO: Tee näppäinkuuntelijat, joilla voi valita kentän, pelaajahahmon, taustamusan
     }
 
+    public void AloitaAlusta()
+    {
+        ClearAll();
+        Mouse.IsCursorVisible = true;
+        Timer.SingleShot(1.0, () => Apuri.NaytaAlkuValikko());
+    }
     public void AloitaSatunnainenPeli()
     {
         // kuva,   
@@ -265,6 +273,7 @@ public class PajaPeli : PhysicsGame
         PhysicsObject esine = new PhysicsObject(leveys-2, korkeus-2);
         esine.Image = RandomGen.SelectOne<Image>(EsineKuvat[vari]);
         esine.Tag = Nimet[esine.Image];
+        esine.Position = paikka;
         Add(esine, 1);
         Esineet.Add(esine);
 
