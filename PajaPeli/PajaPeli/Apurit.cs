@@ -113,6 +113,7 @@ static class Apuri
      {"KUOLEE", PajaPeli.Tapahtuma.Kuolee },
      {"ESINE", PajaPeli.Tapahtuma.Noukkii },
      {"LIIKKUU", PajaPeli.Tapahtuma.Liikkuu },
+     {"VOITTAA", PajaPeli.Tapahtuma.Voittaa },
      {"GAMEOVER", PajaPeli.Tapahtuma.PeliLoppuu }};
 
     public static void LataaAanetKansiosta(string kansio, out Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>> tehosteKokoelma)

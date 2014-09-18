@@ -102,6 +102,18 @@ public class PajaPeli : PhysicsGame
 
         Apuri.NaytaAlkuValikko();
         //Apuri.VaihdaKokoruuduntilaan(this.Window.Handle, true);
+
+        // Tämä näyttää tiedotteen pelikerhosta
+        Label tiedote = new Label("Pelikerho Pääkirjastolla keskiviikkoisin 17:00-19:00, lisätietoa: facebook.com/sepeliry");
+        tiedote.Font = Font.DefaultLarge;
+        tiedote.Y = - Screen.Height / 2 + tiedote.Height;
+        Add(tiedote);
+        Timer vilkutaTiedotettaAjastin = new Timer();
+        vilkutaTiedotettaAjastin.Interval = 0.1;
+        vilkutaTiedotettaAjastin.TimesLimited = false;
+        vilkutaTiedotettaAjastin.Timeout += () => tiedote.Color = RandomGen.NextColor();
+        vilkutaTiedotettaAjastin.Start();
+
     }
 
     void LisaaNappainKuuntelijat()

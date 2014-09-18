@@ -7,9 +7,9 @@ static class Ohjelma
     {
         using (PajaPeli game = new PajaPeli())
         {
-#if !DEBUG
+//#if !DEBUG
             game.IsFullScreen = true;
-#endif
+//#endif
             game.Run();
         }
     }
