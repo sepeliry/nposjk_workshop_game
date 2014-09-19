@@ -411,7 +411,7 @@ public class PajaPeli : PhysicsGame
         if (Tehosteet.ContainsKey(tapahtuma))
         {
             SoundEffect tehoste = RandomGen.SelectOne<SoundEffect>(Tehosteet[tapahtuma]);
-            tehoste.Play();
+            tehoste.Play(0.25, 0.0, 0.0);
         }
     }
     private void SoitaSatunnainenBiisi()
