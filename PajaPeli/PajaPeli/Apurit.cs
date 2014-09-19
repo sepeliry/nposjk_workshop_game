@@ -112,6 +112,7 @@ static class Apuri
      {"SATTUU", PajaPeli.Tapahtuma.Sattuu },
      {"KUOLEE", PajaPeli.Tapahtuma.Kuolee },
      {"ESINE", PajaPeli.Tapahtuma.Noukkii },
+     {"HYPPY", PajaPeli.Tapahtuma.Hyppaa },
      {"LIIKKUU", PajaPeli.Tapahtuma.Liikkuu },
      {"VOITTAA", PajaPeli.Tapahtuma.Voittaa },
      {"GAMEOVER", PajaPeli.Tapahtuma.PeliLoppuu }};

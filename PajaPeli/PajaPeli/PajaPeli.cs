@@ -31,6 +31,7 @@ public class PajaPeli : PhysicsGame
         Noukkii,
         Liikkuu,
         PeliLoppuu,
+        Hyppaa,
         Voittaa,
         Tuntematon
 	}
@@ -433,6 +434,7 @@ public class PajaPeli : PhysicsGame
 
     void HyppaytaPelaajaa(double korkeus)
     {
+        ToistaTehoste(Tapahtuma.Hyppaa);
         Pelaaja.Jump(korkeus);
     }
 
