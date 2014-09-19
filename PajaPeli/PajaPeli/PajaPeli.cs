@@ -104,7 +104,7 @@ public class PajaPeli : PhysicsGame
         //Apuri.VaihdaKokoruuduntilaan(this.Window.Handle, true);
 
         // Tämä näyttää tiedotteen pelikerhosta
-        Label tiedote = new Label("Pelikerho Pääkirjastolla keskiviikkoisin 17:00-19:00, lisätietoa: facebook.com/sepeliry");
+        Label tiedote = new Label("Pelikerho Pääkirjastolla keskiviikkoisin 17:00-19:00,\n             lisätietoa: facebook.com/sepeliry");
         tiedote.Font = Font.DefaultLarge;
         tiedote.Y = - Screen.Height / 2 + tiedote.Height;
         Add(tiedote);
