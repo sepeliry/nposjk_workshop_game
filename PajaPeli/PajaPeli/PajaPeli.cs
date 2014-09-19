@@ -379,6 +379,7 @@ public class PajaPeli : PhysicsGame
         // Aloita alusta, TODO: tai tee jotain muuta...
         ToistaTehoste(Tapahtuma.Voittaa);
         pelaaja.Destroy();
+        
         Timer.SingleShot(0.5, PeliLoppuu);
     }
     void PelaajaOsuuEsteeseen(PhysicsObject pelaaja, PhysicsObject este)
@@ -388,11 +389,19 @@ public class PajaPeli : PhysicsGame
     }
     void PeliLoppuu()
     {
-        Label loppu = new Label("GAME OVER (paina ESC)");
+        Label loppu = new Label("GAME OVER (paina ESC)\ntai odota...");
         loppu.Font = Font.DefaultLargeBold;
         Add(loppu);
         ToistaTehoste(Tapahtuma.PeliLoppuu);
+
+        Timer.SingleShot(2, AloitaAlusta);
     }  
+
+    void AloitaAlusta()
+    {
+        ClearAll();
+        Begin();
+    }
 #endregion
 
 #region ÄäntenSoitto
