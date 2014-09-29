@@ -110,10 +110,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Apurit.cs" />
-    <Compile Include="Ohjelma.cs" />
+    <Compile Include="Framework\Apurit.cs" />
+    <Compile Include="Framework\Ohjelma.cs" />
     <Compile Include="PajaPeli.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Framework\TiedostoistaLadattavaPeli.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />

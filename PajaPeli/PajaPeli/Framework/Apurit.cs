@@ -5,7 +5,10 @@ using System.Linq;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
+using XnaSoundEffect = Microsoft.Xna.Framework.Audio.SoundEffect;
+using AudioChannels = Microsoft.Xna.Framework.Audio.AudioChannels;
 using Jypeli.Widgets;
+using System.Reflection;
 
 static class Apuri
 {
@@ -117,6 +120,8 @@ static class Apuri
      {"VOITTAA", PajaPeli.Tapahtuma.Voittaa },
      {"GAMEOVER", PajaPeli.Tapahtuma.PeliLoppuu }};
 
+    
+
     public static void LataaAanetKansiosta(string kansio, out Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>> tehosteKokoelma)
     {
         tehosteKokoelma = new Dictionary<PajaPeli.Tapahtuma, List<SoundEffect>>();
@@ -124,11 +129,15 @@ static class Apuri
         string[] aaniTiedostoPolut = Directory.GetFiles(kansio, "*.wav", SearchOption.TopDirectoryOnly);
         foreach (var aaniPolku in aaniTiedostoPolut)
         {
-            // TODO: SOUND EFFECTS CANNOT BE LOADED FROM FILE ;(   (for now)
             string tehosteenNimi = Path.GetFileNameWithoutExtension(aaniPolku);
             try
             {
-                SoundEffect tehoste = Game.LoadSoundEffect(tehosteenNimi);
+                SoundEffect tehoste = LoadSoundEffectFromFile(aaniPolku);
+                if (tehoste == null)
+                    throw new NullReferenceException("Failed to load sound effect as loading routine returned null");
+
+                // Tätä käyettiin resursseista lataamiseen ennen kuin LoadSoundEffectFromFile tehtiin
+                //SoundEffect tehoste = Game.LoadSoundEffect(tehosteenNimi);
 
                 // Lue avainsana
                 PajaPeli.Tapahtuma tapahtuma = PajaPeli.Tapahtuma.Tuntematon;
@@ -151,7 +160,7 @@ static class Apuri
             }
             catch (Exception)
             {
-                Peli.MessageDisplay.Add("Äänitehoste " + tehosteenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
+                Peli.MessageDisplay.Add("Äänitehoste " + tehosteenNimi + " on väärää tiedostomuotoa. Pyydä ohjaajalta apua.");
             }
         }
     }
@@ -163,27 +172,30 @@ static class Apuri
         string[] aaniTiedostoPolut = Directory.GetFiles(kansio, "*.wav", SearchOption.TopDirectoryOnly);
         foreach (var aaniPolku in aaniTiedostoPolut)
         {
-            // TODO: SOUND EFFECTS CANNOT BE LOADED FROM FILE ;(   (for now)
             string kappaleenNimi = Path.GetFileNameWithoutExtension(aaniPolku);
             try
             {
-                SoundEffect kappale = Game.LoadSoundEffect(kappaleenNimi);
+                SoundEffect kappale = LoadSoundEffectFromFile(aaniPolku);
+                if (kappale == null)
+                    throw new NullReferenceException("Failed to load sound effect as loading routine returned null");
+
+                // Tätä käyettiin resursseista lataamiseen ennen kuin LoadSoundEffectFromFile tehtiin
+                //SoundEffect kappale = Game.LoadSoundEffect(kappaleenNimi);
                 musiikkiKokoelma[kappaleenNimi] = kappale;
             }
             catch (Exception)
             {
-                Peli.MessageDisplay.Add("Musiikkikappaletta " + kappaleenNimi + " ei ole pelin resursseissa. Pyydä ohjaajalta apua.");
+                Peli.MessageDisplay.Add("Musiikkikappaletta " + kappaleenNimi + " on väärää tiedostomuotoa. Pyydä ohjaajalta apua.");
             }
         }
     }
-
 
     // Valikko"hässäkkä
     public static void NaytaAlkuValikko()
     {
         MultiSelectWindow alkuValikko = new MultiSelectWindow("PajaPelin alkuvalikko",
                 "Aloita satunnainen peli", "Valitse pelisi", "Lopeta");
-        alkuValikko.AddItemHandler(0, Peli.AloitaSatunnainenPeli);
+        alkuValikko.AddItemHandler(0, Peli.SatunnainenPeliValittu);
         alkuValikko.AddItemHandler(1, ValitsePelaajaHahmo);
         alkuValikko.AddItemHandler(2, Peli.Exit);
         alkuValikko.DefaultCancel = 2;
@@ -294,7 +306,7 @@ static class Apuri
         }
         else
         {
-            Peli.AloitaTiettyPeli();
+            Peli.TiettyPeliValittu();
         }
     }
 
@@ -305,9 +317,61 @@ static class Apuri
             string valitunKappaleenNimi = musiikinNimet[valinta];
             Peli.ValittuMusiikki = Peli.Musiikki[valitunKappaleenNimi];
         }
-        Peli.AloitaTiettyPeli();
+        Peli.TiettyPeliValittu();
     }
 
+
+    public static void AsetaPeli(PhysicsGame peli)
+    {
+        Peli = peli as PajaPeli;
+    }
+
+    private static SoundEffect LoadSoundEffectFromFile(string wavPath)
+    {
+        SoundEffect jypeliSoundEffect = null;
+
+        FileStream fs = new FileStream(wavPath, FileMode.Open, FileAccess.Read);
+        BinaryReader reader = new BinaryReader(fs);
+
+        //Read the wave file header from the buffer. (COPY/PASTE from MSDN)
+        int chunkID = reader.ReadInt32();
+        int fileSize = reader.ReadInt32();
+        int riffType = reader.ReadInt32();
+        int fmtID = reader.ReadInt32();
+        int fmtSize = reader.ReadInt32();
+        int fmtCode = reader.ReadInt16();
+        int channels = reader.ReadInt16();
+        int sampleRate = reader.ReadInt32();
+        int fmtAvgBPS = reader.ReadInt32();
+        int fmtBlockAlign = reader.ReadInt16();
+        int bitDepth = reader.ReadInt16();
+
+        if (fmtSize == 18)
+        {
+            // Read any extra values
+            int fmtExtraSize = reader.ReadInt16();
+            reader.ReadBytes(fmtExtraSize);
+        }
+
+        int dataID = reader.ReadInt32();
+        int dataSize = reader.ReadInt32();
+
+        // Read the data
+        byte[] byteArray = reader.ReadBytes(dataSize);
+
+        // Create the SoundEffect from the Stream
+        XnaSoundEffect xnaSE = new XnaSoundEffect(byteArray, sampleRate, (AudioChannels)channels);
+
+        // The needed constructor of Jypeli.SoundEffect is internal, so we cant simply do this:
+        //SoundEffect sound = new SoundEffect( xnaSE );
+        // instead we have to do this:
+        jypeliSoundEffect =
+            (SoundEffect)(Activator.CreateInstance(typeof(SoundEffect),
+                BindingFlags.NonPublic | BindingFlags.Instance,
+            null, new object[] { xnaSE }, null));
+
+        return jypeliSoundEffect;
+    }
 }
 
 public static class IDictionaryExtensions
