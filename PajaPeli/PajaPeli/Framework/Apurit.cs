@@ -35,10 +35,10 @@ static class Apuri
                 listaVareja.GroupBy(item => item.AlphaComponent).OrderByDescending(g => g.Count()).Select(g => g.Key).First());
     }
 
-    public static void LataaKartatKansiosta(string kansio, int maksimiLeveys, int maksimiKorkeus,
-        ref Dictionary<Image, string> nimet, out List<Image> karttaKokoelma)
+    public static void LataaKentatKansiosta(string kansio, int maksimiLeveys, int maksimiKorkeus,
+        ref Dictionary<Image, string> nimet, out List<Image> kenttaKokoelma)
     {
-        karttaKokoelma = new List<Image>();
+        kenttaKokoelma = new List<Image>();
 
         string[] kuvatiedostonPolut = Directory.GetFiles(kansio, "*.png", SearchOption.TopDirectoryOnly);
         foreach (var kuvaPolku in kuvatiedostonPolut)
@@ -47,11 +47,11 @@ static class Apuri
 
             if (ladattuKuva.Width > maksimiLeveys || ladattuKuva.Height > maksimiKorkeus)
             {
-                Peli.MessageDisplay.Add("Karttakuva " + Path.GetFileName(kuvaPolku) + " on liian suuri.");
+                Peli.MessageDisplay.Add("Kenttäkuva " + Path.GetFileName(kuvaPolku) + " on liian suuri.");
                 continue; // Hyppää seuraavaan tiedostoon (for silmukassa)
             }
 
-            karttaKokoelma.Add(ladattuKuva);
+            kenttaKokoelma.Add(ladattuKuva);
             nimet.Add(ladattuKuva, Path.GetFileNameWithoutExtension(kuvaPolku));
         }
     }
@@ -230,10 +230,16 @@ static class Apuri
 
     public static void NaytaNappienKuvat(MultiSelectWindow valikko, Dictionary<string, Image> nimistaKuvat)
     {
-        foreach (var valinta in valikko.Buttons)
+        foreach (PushButton valinta in valikko.Buttons)
         {
             valinta.TextColor = Color.Black;
             valinta.Image = nimistaKuvat[valinta.Text];
+            valinta.ImageReleased = nimistaKuvat[valinta.Text];
+
+            // Tee valinnasta vaaleampi
+            Image valittuKuva = valinta.Image.Clone();
+            valittuKuva.ApplyPixelOperation( c => Color.Lighter(c, 100) );
+            valinta.ImageHover = valittuKuva;
         }
     }
 
@@ -282,6 +288,43 @@ static class Apuri
 
         string valitunKartanNimi = karttojenNimet[valinta];
         Peli.ValittuKartta = res[valitunKartanNimi].First();
+        ValitseTaustakuva();
+    }
+
+    public static void ValitseTaustakuva()
+    {
+        List<string> taustojenNimet = new List<string>();
+        Dictionary<string, Image> nimistaKuvat = new Dictionary<string, Image>();
+        foreach (var tausta in Peli.Taustakuvat)
+        {
+            taustojenNimet.Add(Peli.Nimet[tausta]);
+            nimistaKuvat.Add(Peli.Nimet[tausta], tausta);
+        }
+
+        if (taustojenNimet.Count > 0)
+        {
+            MultiSelectWindow taustaValikko = new MultiSelectWindow("Valitse taustakuva", taustojenNimet.ToArray());
+            for (int i = 0; i < taustojenNimet.Count; i++)
+            {
+                taustaValikko.AddItemHandler(i, TaustaValittu, i, taustojenNimet);
+            }
+            Peli.Add(taustaValikko);
+            //Timer.SingleShot(0.1, () => NaytaNappienKuvat(taustaValikko, nimistaKuvat));
+        }
+        else
+        {
+            ValitseTaustamusiikki();
+        }
+    }
+
+    public static void TaustaValittu(int valinta, List<string> taustojenNimet)
+    {
+        var res = Peli.Nimet
+           .GroupBy(p => p.Value)
+           .ToDictionary(g => g.Key, g => g.Select(pp => pp.Key).ToList());
+
+        string valitunTaustanNimi = taustojenNimet[valinta];
+        Peli.ValittuTausta = res[valitunTaustanNimi].First();
         ValitseTaustamusiikki();
     }
 

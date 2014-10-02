@@ -23,6 +23,10 @@
     <RootNamespace>FysiikkaPeliContent</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AnimationExtension, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\ContentExtensions\AnimationExtension.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.EffectImporter, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
       <Private>False</Private>
     </Reference>
@@ -41,8 +45,10 @@
     <Reference Include="Microsoft.Xna.Framework.Content.Pipeline.VideoImporters, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=MSIL">
       <Private>False</Private>
     </Reference>
-    <Reference Include="TextFileContentExtension" />
-    <Reference Include="AnimationExtension" />
+    <Reference Include="TextFileContentExtension, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\ContentExtensions\TextFileContentExtension.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />
   <!--  To modify your build process, add your task inside one of the targets below and uncomment it. 

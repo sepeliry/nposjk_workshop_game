@@ -33,6 +33,8 @@ public class TiedostoistaLadattavaPeli : PhysicsGame
     protected static int RUUDUN_KORKEUS = 64;
     protected static int KARTAN_MAKSIMILEVEYS = 200;
     protected static int KARTAN_MAKSIMIKORKEUS = 30;
+    protected static int TAUSTAN_MAKSIMILEVEYS = 1920;
+    protected static int TAUSTAN_MAKSIMIKORKEUS = 1080;
 
     // Nämä pitävät sisällään peliin tiedostoista ladattavaa sisältöä.
     //  Dictionary tarkoittaa hakemistoa, jossa kuhunkin arvoon (esim. väri Color) on 
@@ -44,6 +46,8 @@ public class TiedostoistaLadattavaPeli : PhysicsGame
     public Dictionary<Tapahtuma, List<SoundEffect>> Tehosteet;
     public Dictionary<string, SoundEffect> Musiikki;
     public List<Image> Kartat;
+    public List<Image> Taustakuvat;
+
 
     // Liikkumisesta kuuluva ääni
     SoundEffect liikkumisTehoste = null;
@@ -56,8 +60,9 @@ public class TiedostoistaLadattavaPeli : PhysicsGame
         Apuri.LataaKuvatKansiosta(@"DynamicContent\Hahmot", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, ref Nimet, out HahmoKuvat);
         Apuri.LataaKuvatKansiosta(@"DynamicContent\Maasto", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, ref Nimet, out MaastoKuvat);
         Apuri.LataaKuvatKansiosta(@"DynamicContent\Esineet", RUUDUN_KUVAN_LEVEYS, RUUDUN_KUVAN_KORKEUS, ref Nimet, out EsineKuvat);
-        Apuri.LataaKartatKansiosta(@"DynamicContent\Kartat", KARTAN_MAKSIMILEVEYS, KARTAN_MAKSIMIKORKEUS, ref Nimet, out Kartat);
-
+        Apuri.LataaKentatKansiosta(@"DynamicContent\Kartat", KARTAN_MAKSIMILEVEYS, KARTAN_MAKSIMIKORKEUS, ref Nimet, out Kartat);
+        Apuri.LataaKentatKansiosta(@"DynamicContent\Taustat", TAUSTAN_MAKSIMILEVEYS, TAUSTAN_MAKSIMIKORKEUS, ref Nimet, out Taustakuvat);
+    
         // TODO: Tee lataaja äänille ja lataa
         Apuri.LataaAanetKansiosta(@"DynamicContent\Tehosteet", out Tehosteet);
         Apuri.LataaAanetKansiosta(@"DynamicContent\Musiikki", out Musiikki);

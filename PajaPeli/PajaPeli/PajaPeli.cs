@@ -37,9 +37,10 @@ public class PajaPeli : TiedostoistaLadattavaPeli
     public static Color KENTÄN_MAALIN_VARI = Color.FromPaintDotNet(1, 14);
 
     // Peliin valitut asiat
-    public Image ValittuPelaajaHahmo = null;
-    public Image ValittuKartta = null;
-    public SoundEffect ValittuMusiikki = null; 
+    public Image ValittuPelaajaHahmo;
+    public Image ValittuKartta;
+    public Image ValittuTausta;
+    public SoundEffect ValittuMusiikki; 
 
     // Pelin tilanne ja tilatietoa tallentavat muuttujat
     List<Vector> PelaajanAloitusPaikat = new List<Vector>();
@@ -53,6 +54,13 @@ public class PajaPeli : TiedostoistaLadattavaPeli
         LataaSisallotTiedostoista();
 
         Mouse.IsCursorVisible = true;
+        
+        // Nollaa valinnat
+        ValittuPelaajaHahmo = null;
+        ValittuKartta = null;
+        ValittuTausta = null;
+        ValittuMusiikki = null; 
+
         Apuri.NaytaAlkuValikko();
     }
 
@@ -70,6 +78,7 @@ public class PajaPeli : TiedostoistaLadattavaPeli
         LisaaPelaajaPeliin();
 
         ValittuKartta = RandomGen.SelectOne<Image>(Kartat);
+        ValittuTausta = RandomGen.SelectOne<Image>(Taustakuvat);
         LataaKentta();
 
         // äänet, 
@@ -155,7 +164,74 @@ public class PajaPeli : TiedostoistaLadattavaPeli
         // Pelaaja aloittaa keskeltä, jos ei ole merkattuja aloituspaikkoja
         if (PelaajanAloitusPaikat.Count == 0)
             PelaajanAloitusPaikat.Add(new Vector(0, 0));
+
+        // Aseta taustakuva
+        if (ValittuTausta != null)
+        {
+            Level.Background.Image = ValittuTausta;
+            Level.Background.ScaleToLevel();
+            Level.Background.TileToLevel();
+        }
     }
+
+
+    #region PeliTapahtumienKäsittely
+    void PelaajaKeraaEsineen(PhysicsObject pelaaja, PhysicsObject esine)
+    {
+        ToistaTehoste(Tapahtuma.Noukkii);
+        esine.Destroy();
+        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
+    }
+    void PelaajaOsuuHahmoon(PhysicsObject pelaaja, PhysicsObject hahmo)
+    {
+        ToistaTehoste(Tapahtuma.Kuolee);
+        pelaaja.Destroy(); // Tapa pelaaja
+        Timer.SingleShot(0.5, PeliLoppuu);
+        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
+    }
+    void PelaajaPaasiMaaliin(PhysicsObject pelaaja, PhysicsObject maali)
+    {
+        // Aloita alusta, TODO: tai tee jotain muuta...
+        ToistaTehoste(Tapahtuma.Voittaa);
+        pelaaja.Destroy();
+
+        Timer.SingleShot(0.5, PeliLoppuu);
+    }
+    void PelaajaOsuuEsteeseen(PhysicsObject pelaaja, PhysicsObject este)
+    {
+        ToistaTehoste(Tapahtuma.Sattuu);
+        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
+    }
+
+    void PeliLoppuu()
+    {
+        Label loppu = new Label("GAME OVER (paina ESC)\ntai odota...");
+        loppu.Font = Font.DefaultLargeBold;
+        Add(loppu);
+        ToistaTehoste(Tapahtuma.PeliLoppuu);
+
+        Timer.SingleShot(2, AloitaAlusta);
+    }
+    void AloitaAlusta()
+    {
+        ClearAll();
+        Begin();
+    }
+    #endregion
+
+    #region NapinPainallustenKäsittely
+    void LiikutaPelaajaa(double nopeus)
+    {
+        ToistaTehoste(Tapahtuma.Liikkuu);
+        Pelaaja.Walk(nopeus);
+    }
+
+    void HyppaytaPelaajaa(double korkeus)
+    {
+        ToistaTehoste(Tapahtuma.Hyppaa);
+        Pelaaja.Jump(korkeus);
+    }
+    #endregion
 
 #region PeliOlioidenLisääminen
     void LisaaMaaliKartalle(Vector paikka, double leveys, double korkeus, Color vari)
@@ -196,7 +272,7 @@ public class PajaPeli : TiedostoistaLadattavaPeli
             // Kun pelaaja osuu esteeseen, kutsutaan PelaajaOsuuEsteeseen aliohjelmaa
             AddCollisionHandler(Pelaaja, este, PelaajaOsuuEsteeseen);
         }
-        // Vaalea väri, ihan vaan taustaa
+        // Vaalea väri, ihan vaan taustaa (ei törmäyksiä)
         else
         {
             GameObject tausta = new GameObject(leveys, korkeus);
@@ -250,6 +326,7 @@ public class PajaPeli : TiedostoistaLadattavaPeli
         esine.Position = paikka;
         Add(esine, 1);
         PelissaOlevatEsineet.Add(esine);
+        AddCollisionHandler(Pelaaja, esine, PelaajaKeraaEsineen);
     }
     void LisaaPelaajaPeliin()
     {
@@ -292,65 +369,6 @@ public class PajaPeli : TiedostoistaLadattavaPeli
             uusiMaasto.Position = esineTaiHahmo.Position;
             Add(uusiMaasto);
         }
-    }
-#endregion
-
-#region PeliTapahtumienKäsittely
-    void PelaajaKeraaEsineen(PhysicsObject pelaaja, PhysicsObject esine)
-    {
-        ToistaTehoste(Tapahtuma.Noukkii);
-        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
-    }
-    void PelaajaOsuuHahmoon(PhysicsObject pelaaja, PhysicsObject hahmo)
-    {
-        ToistaTehoste(Tapahtuma.Kuolee);
-        pelaaja.Destroy(); // Tapa pelaaja
-        Timer.SingleShot(0.5, PeliLoppuu);
-        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
-    }
-    void PelaajaPaasiMaaliin(PhysicsObject pelaaja, PhysicsObject maali)
-    {
-        // Aloita alusta, TODO: tai tee jotain muuta...
-        ToistaTehoste(Tapahtuma.Voittaa);
-        pelaaja.Destroy();
-        
-        Timer.SingleShot(0.5, PeliLoppuu);
-    }
-    void PelaajaOsuuEsteeseen(PhysicsObject pelaaja, PhysicsObject este)
-    {
-        ToistaTehoste(Tapahtuma.Sattuu);
-        // TODO: Mitä sitten tapahtuu? Kirjoita koodia tähän...
-    }
-
-    void PeliLoppuu()
-    {
-        Label loppu = new Label("GAME OVER (paina ESC)\ntai odota...");
-        loppu.Font = Font.DefaultLargeBold;
-        Add(loppu);
-        ToistaTehoste(Tapahtuma.PeliLoppuu);
-
-        Timer.SingleShot(2, AloitaAlusta);
-    }  
-    void AloitaAlusta()
-    {
-        ClearAll();
-        Begin();
-    }
-#endregion
-
-
-
-#region NapinPainallustenKäsittely
-    void LiikutaPelaajaa(double nopeus)
-    {
-        ToistaTehoste(Tapahtuma.Liikkuu);
-        Pelaaja.Walk(nopeus);
-    }
-
-    void HyppaytaPelaajaa(double korkeus)
-    {
-        ToistaTehoste(Tapahtuma.Hyppaa);
-        Pelaaja.Jump(korkeus);
     }
 #endregion
 }
